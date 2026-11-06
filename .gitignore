@@ -1,0 +1,8 @@
+# the data come from Hugging Face (python main.py download), never from git
+data/
+artifacts/
+artifacts_*/
+submission.zip
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store

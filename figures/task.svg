@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 352" role="img" aria-label="The task: go to a square of the grid, shoot holes in it, each hole gives a few photos whose reports arrive 75 seconds later; the hours go into photos, moves between holes and moves between squares.">
+<defs>
+<marker id="aInk" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--ink)"/></marker>
+<marker id="aAcc" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--accent)"/></marker>
+<marker id="aOr" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--c2)"/></marker>
+<marker id="aGrey" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--cgrey)"/></marker>
+</defs>
+<g font-family="'Source Sans 3', Helvetica, Arial, sans-serif" font-size="10.5" fill="currentColor">
+<text x="16" y="18" font-size="9.5" fill="var(--muted)" text-anchor="start" font-family="'IBM Plex Mono', Menlo, monospace" letter-spacing="0.06em">1 · THE GRID: PICK A SQUARE</text>
+<rect x="16" y="30" width="30" height="30" fill="var(--grid)" stroke="var(--axis)"/>
+<rect x="16" y="60" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="16" y="90" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="16" y="120" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="16" y="150" width="30" height="30" fill="var(--grid)" stroke="var(--axis)"/>
+<rect x="46" y="30" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="46" y="60" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="46" y="90" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="46" y="120" width="30" height="30" fill="var(--grid)" stroke="var(--axis)"/>
+<rect x="46" y="150" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="76" y="30" width="30" height="30" fill="var(--grid)" stroke="var(--axis)"/>
+<rect x="76" y="60" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="76" y="90" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="76" y="120" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="76" y="150" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="106" y="30" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="106" y="60" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="106" y="90" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="106" y="120" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="106" y="150" width="30" height="30" fill="var(--grid)" stroke="var(--axis)"/>
+<rect x="136" y="30" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="136" y="60" width="30" height="30" fill="var(--grid)" stroke="var(--axis)"/>
+<rect x="136" y="90" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="136" y="120" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="136" y="150" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="166" y="30" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="166" y="60" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="166" y="90" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="166" y="120" width="30" height="30" fill="var(--panel)" stroke="var(--axis)"/>
+<rect x="166" y="150" width="30" height="30" fill="var(--grid)" stroke="var(--axis)"/>
+<rect x="48" y="62" width="26" height="26" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.5"/>
+<rect x="78" y="92" width="26" height="26" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.5"/>
+<rect x="138" y="92" width="26" height="26" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.5"/>
+<rect x="108" y="122" width="26" height="26" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.5"/>
+<polyline points="61.0,75.0 91.0,105.0 151.0,105.0 121.0,135.0" fill="none" stroke="var(--c2)" stroke-width="1.6" marker-end="url(#aOr)"/>
+<text x="16" y="196" font-size="10.5" fill="var(--muted)" text-anchor="start">a few hundred squares on a grid,</text>
+<text x="16" y="210" font-size="10.5" fill="var(--muted)" text-anchor="start">each photographed before you start;</text>
+<text x="16" y="224" font-size="10.5" fill="var(--muted)" text-anchor="start">some are broken or empty (grey)</text>
+<path d="M166 94L262 52" fill="none" stroke="var(--axis)" stroke-dasharray="3 3"/>
+<path d="M166 116L262 214" fill="none" stroke="var(--axis)" stroke-dasharray="3 3"/>
+<text x="262" y="18" font-size="9.5" fill="var(--muted)" text-anchor="start" font-family="'IBM Plex Mono', Menlo, monospace" letter-spacing="0.06em">2 · ONE SQUARE: SHOOT HOLES</text>
+<rect x="262" y="30" width="200" height="184" rx="3" fill="var(--panel)" stroke="currentColor"/>
+<circle cx="280" cy="50" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="280" cy="79" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="280" cy="108" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="280" cy="137" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="280" cy="166" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="280" cy="195" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="307" cy="50" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="307" cy="79" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="307" cy="108" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="307" cy="137" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="307" cy="166" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="307" cy="195" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="334" cy="50" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="334" cy="79" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="334" cy="108" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="334" cy="137" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="334" cy="166" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="334" cy="195" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="361" cy="50" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="361" cy="79" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="361" cy="108" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="361" cy="137" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="361" cy="166" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="361" cy="195" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="388" cy="50" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="388" cy="79" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="388" cy="108" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="388" cy="137" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="388" cy="166" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="388" cy="195" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="415" cy="50" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="415" cy="79" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="415" cy="108" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="415" cy="137" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="415" cy="166" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="415" cy="195" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.4"/>
+<circle cx="442" cy="50" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="442" cy="79" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="442" cy="108" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="442" cy="137" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="442" cy="166" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<circle cx="442" cy="195" r="9" fill="var(--panel)" stroke="var(--axis)"/>
+<path d="M317.0 79.0L324.0 79.0" fill="none" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#aAcc)"/>
+<path d="M344.0 79.0L351.0 79.0" fill="none" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#aAcc)"/>
+<path d="M371.0 79.0L378.0 79.0" fill="none" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#aAcc)"/>
+<path d="M388.0 89.0L388.0 98.0" fill="none" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#aAcc)"/>
+<path d="M391.0 117.6L412.0 185.4" fill="none" stroke="var(--c2)" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#aOr)"/>
+<circle cx="307" cy="79" r="9" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"/>
+<circle cx="334" cy="79" r="9" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"/>
+<circle cx="361" cy="79" r="9" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"/>
+<circle cx="388" cy="79" r="9" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"/>
+<circle cx="388" cy="108" r="9" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"/>
+<text x="262" y="228" font-size="10.5" fill="var(--muted)" text-anchor="start">dark rims: the holes the operator selected,</text>
+<text x="262" y="242" font-size="10.5" fill="var(--muted)" text-anchor="start">the only ones you can shoot; nearby holes</text>
+<text x="262" y="256" font-size="10.5" fill="var(--muted)" text-anchor="start">are cheap to reach, far ones (dashed) are not</text>
+<path d="M397 75L506 44" fill="none" stroke="var(--axis)" stroke-dasharray="3 3"/>
+<path d="M397 83L506 156" fill="none" stroke="var(--axis)" stroke-dasharray="3 3"/>
+<text x="506" y="18" font-size="9.5" fill="var(--muted)" text-anchor="start" font-family="'IBM Plex Mono', Menlo, monospace" letter-spacing="0.06em">3 · ONE HOLE: A FEW PHOTOS</text>
+<circle cx="562" cy="100" r="52" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"/>
+<rect x="530" y="70" width="16" height="16" fill="var(--panel)" stroke="var(--ink)"/>
+<rect x="554" y="66" width="16" height="16" fill="var(--panel)" stroke="var(--ink)"/>
+<rect x="578" y="70" width="16" height="16" fill="var(--panel)" stroke="var(--ink)"/>
+<rect x="526" y="96" width="16" height="16" fill="var(--panel)" stroke="var(--ink)"/>
+<rect x="554" y="92" width="16" height="16" fill="var(--panel)" stroke="var(--ink)"/>
+<rect x="582" y="96" width="16" height="16" fill="var(--panel)" stroke="var(--ink)"/>
+<rect x="554" y="120" width="16" height="16" fill="var(--panel)" stroke="var(--ink)"/>
+<text x="630" y="66" font-size="10.5" fill="currentColor" text-anchor="start">shooting a hole takes</text>
+<text x="630" y="80" font-size="10.5" fill="currentColor" text-anchor="start">all its photos (3 to 7),</text>
+<text x="630" y="94" font-size="10.5" fill="currentColor" text-anchor="start">a few seconds each</text>
+<text x="630" y="116" font-size="10.5" fill="var(--muted)" text-anchor="start">each photo is checked</text>
+<text x="630" y="130" font-size="10.5" fill="var(--muted)" text-anchor="start">by software; its report</text>
+<text x="630" y="144" font-size="10.5" fill="var(--muted)" text-anchor="start">reaches you 75 s later</text>
+<text x="506" y="186" font-size="10.5" fill="var(--muted)" text-anchor="start">Weeks later an expert keeps the good</text>
+<text x="506" y="200" font-size="10.5" fill="var(--muted)" text-anchor="start">particles of every photo. That count is</text>
+<text x="506" y="214" font-size="10.5" fill="var(--muted)" text-anchor="start">the score; you never see it on the day.</text>
+<text x="16" y="276" font-size="9.5" fill="var(--muted)" text-anchor="start" font-family="'IBM Plex Mono', Menlo, monospace" letter-spacing="0.06em">WHERE THE HOURS GO</text>
+<rect x="16" y="284" width="110" height="18" fill="var(--c2)" fill-opacity="0.85" stroke="var(--panel)"/>
+<text x="71.0" y="296.5" font-size="9.5" fill="var(--panel)" text-anchor="middle">change square ~3 min</text>
+<rect x="126" y="284" width="64" height="18" fill="var(--accent)" fill-opacity="0.35" stroke="var(--panel)"/>
+<text x="158.0" y="296.5" font-size="9.5" fill="currentColor" text-anchor="middle">photos</text>
+<path d="M158.0 304Q198.0 328 233.0 306" fill="none" stroke="var(--cgrey)" stroke-width="1" marker-end="url(#aGrey)"/>
+<rect x="190" y="284" width="10" height="18" fill="var(--accent-ink)" fill-opacity="0.85" stroke="var(--panel)"/>
+<rect x="200" y="284" width="64" height="18" fill="var(--accent)" fill-opacity="0.35" stroke="var(--panel)"/>
+<text x="232.0" y="296.5" font-size="9.5" fill="currentColor" text-anchor="middle">photos</text>
+<path d="M232.0 304Q272.0 328 307.0 306" fill="none" stroke="var(--cgrey)" stroke-width="1" marker-end="url(#aGrey)"/>
+<rect x="264" y="284" width="10" height="18" fill="var(--accent-ink)" fill-opacity="0.85" stroke="var(--panel)"/>
+<rect x="274" y="284" width="64" height="18" fill="var(--accent)" fill-opacity="0.35" stroke="var(--panel)"/>
+<text x="306.0" y="296.5" font-size="9.5" fill="currentColor" text-anchor="middle">photos</text>
+<path d="M306.0 304Q346.0 328 381.0 306" fill="none" stroke="var(--cgrey)" stroke-width="1" marker-end="url(#aGrey)"/>
+<rect x="338" y="284" width="36" height="18" fill="var(--c2)" fill-opacity="0.85" stroke="var(--panel)"/>
+<text x="356.0" y="296.5" font-size="9.5" fill="var(--panel)" text-anchor="middle">far move</text>
+<rect x="374" y="284" width="64" height="18" fill="var(--accent)" fill-opacity="0.35" stroke="var(--panel)"/>
+<text x="406.0" y="296.5" font-size="9.5" fill="currentColor" text-anchor="middle">photos</text>
+<path d="M406.0 304Q446.0 328 481.0 306" fill="none" stroke="var(--cgrey)" stroke-width="1" marker-end="url(#aGrey)"/>
+<rect x="438" y="284" width="10" height="18" fill="var(--accent-ink)" fill-opacity="0.85" stroke="var(--panel)"/>
+<rect x="448" y="284" width="64" height="18" fill="var(--accent)" fill-opacity="0.35" stroke="var(--panel)"/>
+<text x="480.0" y="296.5" font-size="9.5" fill="currentColor" text-anchor="middle">photos</text>
+<path d="M516 293H542" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#aInk)"/>
+<text x="548" y="297" font-size="10.5" fill="currentColor" text-anchor="start">until the photos hold</text>
+<text x="548" y="311" font-size="10.5" fill="currentColor" text-anchor="start">75% of the kept particles</text>
+<text x="16" y="342" font-size="10.5" fill="var(--muted)" text-anchor="start">curved arrows: each photo's report arrives 75 s after it is taken, while you keep deciding.</text>
+<text x="548" y="331" font-size="11" fill="var(--accent-ink)" text-anchor="start" font-weight="600">score = hours taken</text>
+</g></svg>

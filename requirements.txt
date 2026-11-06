@@ -1,0 +1,10 @@
+# Everything Google Colab already has. Locally: pip install -r requirements.txt
+numpy
+pandas
+pyarrow
+scipy
+scikit-learn
+torch
+pillow
+matplotlib
+huggingface_hub

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img" aria-label="What goes in and what comes out: before the session the policy knows the squares and holes; during it, where it is, the time and the reports that have arrived; it answers go to a square or shoot a hole; the expert count is never seen.">
+<defs>
+<marker id="aInk" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--ink)"/></marker>
+<marker id="aAcc" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--accent)"/></marker>
+<marker id="aOr" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--c2)"/></marker>
+<marker id="aGrey" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--cgrey)"/></marker>
+</defs>
+<g font-family="'Source Sans 3', Helvetica, Arial, sans-serif" font-size="10.5" fill="currentColor">
+<text x="16" y="18" font-size="9.5" fill="var(--muted)" text-anchor="start" font-family="'IBM Plex Mono', Menlo, monospace" letter-spacing="0.06em">WHAT YOUR POLICY KNOWS</text>
+<rect x="16" y="28" width="300" height="104" rx="3" fill="var(--panel)" stroke="currentColor"/>
+<text x="28" y="46" font-size="11.5" fill="currentColor" text-anchor="start" font-weight="600">before the session · reset(info)</text>
+<text x="28" y="64" font-size="10.5" fill="currentColor" text-anchor="start">squares: where each sits on the grid, a photo of it</text>
+<text x="28" y="78" font-size="10.5" fill="currentColor" text-anchor="start">holes: position in their square, brightness, size,</text>
+<text x="28" y="92" font-size="10.5" fill="currentColor" text-anchor="start">   a 64×64 crop of the square photo, a 768-number</text>
+<text x="28" y="106" font-size="10.5" fill="currentColor" text-anchor="start">   image vector, how many photos shooting it takes</text>
+<text x="28" y="120" font-size="10.5" fill="currentColor" text-anchor="start">a clock estimate: seconds per photo, move, square change</text>
+<rect x="16" y="142" width="300" height="90" rx="3" fill="var(--wash)" stroke="var(--accent)"/>
+<text x="28" y="160" font-size="11.5" fill="var(--accent-ink)" text-anchor="start" font-weight="600">during the session · act(obs), every decision</text>
+<text x="28" y="178" font-size="10.5" fill="currentColor" text-anchor="start">where you are, hours so far, which holes are left</text>
+<text x="28" y="192" font-size="10.5" fill="currentColor" text-anchor="start">reports on photos taken 75 s ago or more: particles</text>
+<text x="28" y="206" font-size="10.5" fill="currentColor" text-anchor="start">   the software picked, CTF fit (how sharp, Å), defocus,</text>
+<text x="28" y="220" font-size="10.5" fill="currentColor" text-anchor="start">   ice, motion; photos still waiting for their report</text>
+<path d="M318 80H368" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#aInk)"/>
+<path d="M318 187H340Q346 187 346 181V136Q346 130 352 130H368" fill="none" stroke="var(--accent)" stroke-width="1.2" marker-end="url(#aAcc)"/>
+<rect x="370" y="44" width="170" height="150" rx="4" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.6"/>
+<text x="455" y="66" font-size="10" fill="currentColor" text-anchor="middle" font-family="'IBM Plex Mono', Menlo, monospace" letter-spacing="0.06em">YOUR POLICY</text>
+<text x="455" y="90" font-size="10.5" fill="var(--muted)" text-anchor="middle">example (my_policy.py):</text>
+<text x="455" y="108" font-size="10.5" fill="currentColor" text-anchor="middle">a small network scores</text>
+<text x="455" y="122" font-size="10.5" fill="currentColor" text-anchor="middle">every hole from what is</text>
+<text x="455" y="136" font-size="10.5" fill="currentColor" text-anchor="middle">known before shooting;</text>
+<text x="455" y="150" font-size="10.5" fill="currentColor" text-anchor="middle">the day's reports correct it;</text>
+<text x="455" y="164" font-size="10.5" fill="currentColor" text-anchor="middle">a rule turns scores and</text>
+<text x="455" y="178" font-size="10.5" fill="currentColor" text-anchor="middle">seconds into one move</text>
+<text x="586" y="18" font-size="9.5" fill="var(--muted)" text-anchor="start" font-family="'IBM Plex Mono', Menlo, monospace" letter-spacing="0.06em">WHAT IT ANSWERS</text>
+<path d="M542 92H584" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#aInk)"/>
+<path d="M542 150H584" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#aInk)"/>
+<rect x="586" y="66" width="158" height="52" rx="3" fill="var(--panel)" stroke="var(--c2)" stroke-width="1.4"/>
+<text x="598" y="86" font-size="10.5" fill="currentColor" text-anchor="start" font-weight="600">GoToSquare(square_id)</text>
+<text x="598" y="104" font-size="10.5" fill="var(--muted)" text-anchor="start">move the stage there</text>
+<text x="665" y="136" font-size="10.5" fill="var(--muted)" text-anchor="middle">or</text>
+<rect x="586" y="146" width="158" height="52" rx="3" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.4"/>
+<text x="598" y="166" font-size="10.5" fill="currentColor" text-anchor="start" font-weight="600">ShootHole(hole_id)</text>
+<text x="598" y="184" font-size="10.5" fill="var(--muted)" text-anchor="start">all its photos, then it is spent</text>
+<rect x="16" y="246" width="728" height="40" rx="3" fill="var(--grid)" stroke="none"/>
+<text x="28" y="263" font-size="10.5" fill="currentColor" text-anchor="start" font-weight="600">Never seen on the day: how many particles the expert kept from each photo (the curated count).</text>
+<text x="28" y="278" font-size="10.5" fill="var(--muted)" text-anchor="start">You have it for the four training sessions, to learn from. The score is the hours until the photos taken hold 75% of them.</text>
+</g></svg>
