@@ -54,13 +54,8 @@ It charges each session's real timings and stops at 75% of the expert's particle
 ## Getting started
 
 The code is in this repository. The data, 40 MB, are on Hugging Face at
-[xkronosx/cryoem-challenge-data](https://huggingface.co/datasets/xkronosx/cryoem-challenge-data).
-
-1. With a free Hugging Face account, request access on that page. We approve each request
-   by hand.
-2. Once approved, make a read token at
-   [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens). The first cell
-   of the notebook, or `python main.py download`, asks for it once.
+[xkronosx/cryoem-challenge-data](https://huggingface.co/datasets/xkronosx/cryoem-challenge-data);
+the first cell of the notebook, or `python main.py download`, fetches them.
 
 **On Google Colab** (the free tier is enough):
 

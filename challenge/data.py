@@ -146,26 +146,17 @@ def training_sessions(data_dir=DATA_DIR) -> list:
     return [load_session(Path(data_dir) / n) for n in session_names(data_dir)]
 
 
-# Where data/ lives: a gated Hugging Face dataset, so request access on its page first.
+# Where data/ lives: a Hugging Face dataset.
 DATA_REPO = "xkronosx/cryoem-challenge-data"
 
 
 def download_data(data_dir=DATA_DIR) -> Path:
-    """Fetch the four training sessions into data/, unless they are already there. Asks for
-    a Hugging Face read token when none is saved or the saved one is refused."""
+    """Fetch the four training sessions into data/, unless they are already there."""
     data_dir = Path(data_dir)
     if (data_dir / "references.json").exists():
         return data_dir
     from huggingface_hub import snapshot_download
-    from huggingface_hub.errors import HfHubHTTPError
-    fetch = dict(repo_id=DATA_REPO, repo_type="dataset", local_dir=data_dir,
-                 allow_patterns=["*.parquet", "*.npy", "*.json"])
-    try:
-        snapshot_download(**fetch)
-    except HfHubHTTPError:
-        from getpass import getpass
-        print(f"The data need access: request it at https://huggingface.co/datasets/{DATA_REPO},\n"
-              "then paste a read token from https://huggingface.co/settings/tokens")
-        snapshot_download(**fetch, token=getpass("Hugging Face token: ").strip())
+    snapshot_download(repo_id=DATA_REPO, repo_type="dataset", local_dir=data_dir,
+                      allow_patterns=["*.parquet", "*.npy", "*.json"])
     print(f"data in {data_dir}")
     return data_dir
