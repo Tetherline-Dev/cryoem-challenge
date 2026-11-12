@@ -32,17 +32,31 @@ def artifacts_dir(policy_file) -> Path:
 
 
 def load_policy_module(path):
-    """Import a policy file (my_policy.py) as a fresh module."""
+    """Import a policy file (my_policy.py) as a fresh module, under its own name, so that
+    objects of the classes it defines can be pickled into the artefacts and loaded back."""
     file = Path(path)
     if not file.exists():
         raise FileNotFoundError(f"no policy file at {file}")
     folder = str(file.parent.resolve())
     if folder not in sys.path:
         sys.path.insert(0, folder)
-    name = f"_policy_{abs(hash(str(file.resolve())))}"
+    name = file.stem
+    taken = sys.modules.get(name)
+    if taken is not None and not getattr(taken, "_challenge_policy", False) and \
+            Path(getattr(taken, "__file__", "") or "").resolve() != file.resolve():
+        name = f"_policy_{abs(hash(str(file.resolve())))}"  # the name belongs to another module
     spec = importlib.util.spec_from_file_location(name, file)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    module._challenge_policy = True
+    sys.modules[name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        if taken is not None and name == file.stem:
+            sys.modules[name] = taken
+        else:
+            sys.modules.pop(name, None)
+        raise
     for fn in ("train", "load"):
         if not callable(getattr(module, fn, None)):
             raise AttributeError(f"{file} must define {fn}(); see my_policy.py")
@@ -80,7 +94,9 @@ def validate(policy_dir="my_policy.py", sessions: Optional[Sequence[Session]] = 
     """Leave-one-session-out: for each session, train on the others, replay it.
 
     This is how grading works too: there, you train on all four sessions and the policy
-    plays two sessions it has never seen. Returns {session: EpisodeResult}."""
+    plays two sessions it has never seen. As in grading, the session played is presented as
+    a real day (``Session.as_day``: rows in no particular order, ids re-issued); the
+    training sessions are as recorded. Returns {session: EpisodeResult}."""
     module = load_policy_module(policy_dir)
     sessions = list(sessions) if sessions is not None else training_sessions()
     out = {}
@@ -93,7 +109,7 @@ def validate(policy_dir="my_policy.py", sessions: Optional[Sequence[Session]] = 
             module.train(train, Path(tmp))
             t_train = time.perf_counter() - t0
             policy = module.load(Path(tmp))
-            res = run_policy(policy, held, fit_clock(train))
+            res = run_policy(policy, held.as_day(), fit_clock(train, held.presets))
         out[held.name] = res
         if verbose:
             print(f"  {held.name:10s} {res.hours:7.2f} h   {res.micrographs:6d} photos   "

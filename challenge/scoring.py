@@ -3,7 +3,7 @@
 Summed over the sessions played, and read against three references:
 
 * vs operator   hours relative to the session's recorded acquisition order
-* vs raster     hours relative to the movement-cheap raster
+* vs EPU raster hours relative to EPU's own cluster-by-cluster raster (blind to quality)
 * gap closed    (operator - you) / (operator - oracle): 0% is the operator, 100% the
                 oracle that knows every outcome. Negative means slower than the operator.
 """
@@ -38,20 +38,20 @@ def scorecard(entries: Mapping[str, Mapping[str, float]], references: Mapping[st
     rows.update({name: {s: e[s] for s in sessions} for name, e in entries.items()})
     df = pd.DataFrame(rows).T[sessions]
     df["total h"] = df[sessions].sum(axis=1)
-    op, orc, ras = df.loc["operator", "total h"], df.loc["oracle", "total h"], df.loc["raster", "total h"]
+    op, orc, ras = df.loc["operator", "total h"], df.loc["oracle", "total h"], df.loc["epu_raster", "total h"]
     df["vs operator"] = 100.0 * (df["total h"] / op - 1.0)
-    df["vs raster"] = 100.0 * (df["total h"] / ras - 1.0)
+    df["vs EPU raster"] = 100.0 * (df["total h"] / ras - 1.0)
     df["gap closed"] = 100.0 * (op - df["total h"]) / (op - orc)
     return df.sort_values("total h")
 
 
 def format_scorecard(df: pd.DataFrame) -> str:
-    sessions = [c for c in df.columns if c not in ("total h", "vs operator", "vs raster", "gap closed")]
-    head = "| entry | " + " | ".join(sessions) + " | total | vs operator | vs raster | gap closed |"
+    sessions = [c for c in df.columns if c not in ("total h", "vs operator", "vs EPU raster", "gap closed")]
+    head = "| entry | " + " | ".join(sessions) + " | total | vs operator | vs EPU raster | gap closed |"
     sep = "|---" * (len(sessions) + 5) + "|"
     lines = [head, sep]
     for name, r in df.iterrows():
         cells = [f"{r[s]:.2f} h" for s in sessions]
         lines.append(f"| {name} | " + " | ".join(cells) + f" | {r['total h']:.2f} h | {r['vs operator']:+.1f}% | "
-                     f"{r['vs raster']:+.1f}% | {r['gap closed']:.0f}% |")
+                     f"{r['vs EPU raster']:+.1f}% | {r['gap closed']:.0f}% |")
     return "\n".join(lines)

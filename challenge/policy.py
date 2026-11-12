@@ -12,6 +12,11 @@ A policy is asked for one decision at a time:
 Its results come back late, as they do from CryoSPARC Live: each micrograph's outputs
 arrive 75 instrument-seconds after its exposure, in ``obs.new_results``. The curated
 count, the score, never arrives.
+
+Moves cost what EPU spends (challenge/clock.py): ``obs.anchor_hole`` is where the stage is
+parked; a hole within the clustering radius of it is a quick image-shift hop, any other a stage
+event that parks the stage there. ``obs.move_s(hole_id)`` and ``obs.move_kind(hole_id)`` price a
+move by your clock estimate.
 """
 from __future__ import annotations
 
@@ -73,17 +78,23 @@ class Update:
     pending: dict          # hole_id -> exposures taken whose results have not arrived
     clock: dict            # the agent's clock estimate (Clock fields)
     done: bool
+    anchor_hole: Optional[str] = None      # where the stage is parked (None right after a square change)
+    autofocus_hole: Optional[str] = None   # where the last autofocus was
+    stage_square: Optional[str] = None     # the square the stage is in (also once it is spent)
 
     def to_json(self) -> dict:
         return {"time_s": self.time_s, "current_square": self.current_square, "beam_hole": self.beam_hole,
                 "spent": list(self.spent), "new_results": [list(r) for r in self.new_results],
-                "pending": dict(self.pending), "clock": dict(self.clock), "done": self.done}
+                "pending": dict(self.pending), "clock": dict(self.clock), "done": self.done,
+                "anchor_hole": self.anchor_hole, "autofocus_hole": self.autofocus_hole,
+                "stage_square": self.stage_square}
 
     @classmethod
     def from_json(cls, d: dict) -> "Update":
         return cls(time_s=d["time_s"], current_square=d["current_square"], beam_hole=d["beam_hole"],
                    spent=d["spent"], new_results=[tuple(r) for r in d["new_results"]],
-                   pending=d["pending"], clock=d["clock"], done=d["done"])
+                   pending=d["pending"], clock=d["clock"], done=d["done"], anchor_hole=d.get("anchor_hole"),
+                   autofocus_hole=d.get("autofocus_hole"), stage_square=d.get("stage_square"))
 
 
 class Observation:
@@ -94,6 +105,10 @@ class Observation:
     time_s          instrument seconds since the session started
     current_square  the square the stage is at (None: you must GoToSquare)
     beam_hole       the last hole shot in this square (None right after a square change)
+    anchor_hole     where the stage is parked: holes within the clustering radius of it are hops
+    autofocus_hole  where the last autofocus was (AfterDistance sessions autofocus by distance from it)
+    stage_square    the square the stage is in, also after its holes run out (square changes
+                    are priced from it)
     new_results     Results that arrived since your previous decision
     pending         hole_id -> exposures taken whose results are still on their way
     remaining       bool array over info.holes rows: True for holes not shot yet (read-only)
@@ -101,8 +116,8 @@ class Observation:
     info            the Session (no labels) you received at reset
     """
 
-    __slots__ = ("time_s", "current_square", "beam_hole", "new_results", "pending", "remaining",
-                 "clock", "info", "_state")
+    __slots__ = ("time_s", "current_square", "beam_hole", "anchor_hole", "autofocus_hole", "stage_square",
+                 "new_results", "pending", "remaining", "clock", "info", "_state")
 
     def squares_left(self) -> list:
         """Squares that still have holes to shoot, in info.squares order."""
@@ -123,11 +138,33 @@ class Observation:
         """Pixel distance between two holes of one square (None across squares or unknown)."""
         return self._state.distance_px(a, b)
 
+    def distance_um(self, a: Optional[str], b: str) -> Optional[float]:
+        """Distance between two holes of one square in um (the square image's pixel size)."""
+        d = self._state.distance_px(a, b)
+        return None if d is None else d * self.clock.um_per_px
+
+    def move(self, hole_id: str) -> tuple:
+        """(seconds, kind), by your clock estimate, to bring the beam to a hole of the current
+        square from where the stage is: kind 'entry' (the first hole after a square change: its
+        move is part of the change), 'none' (the beam is there), 'hop', 'stage' or 'stage_af'."""
+        if self.beam_hole is None:
+            return 0.0, "entry"
+        if hole_id == self.beam_hole:
+            return 0.0, "none"
+        st = self._state
+        return self.clock.move(st.distance_px(self.anchor_hole, hole_id), st.distance_px(self.autofocus_hole, hole_id))
+
     def move_s(self, hole_id: str) -> float:
         """Seconds (by your clock estimate) to bring the beam to a hole of the current square."""
-        if hole_id == self.beam_hole:
-            return 0.0
-        return self.clock.move_s(self._state.distance_px(self.beam_hole, hole_id))
+        return self.move(hole_id)[0]
+
+    def move_kind(self, hole_id: str) -> str:
+        """'entry', 'none', 'hop', 'stage' or 'stage_af': see ``move``."""
+        return self.move(hole_id)[1]
+
+    def square_change_s(self, square_id: str) -> float:
+        """Seconds (by your clock estimate) to change to a square from the one the stage is in."""
+        return self.clock.square_change_at(self._state.square_distance_mm(self.stage_square, square_id))
 
     def cost_s(self, hole_id: str) -> float:
         """Seconds (by your clock estimate) to shoot a hole of the current square from where
@@ -151,6 +188,9 @@ class ObservationState:
         for i, s in enumerate(h["square_id"]):
             self.rows_of_square[s].append(i)
         self.left = {s: len(r) for s, r in self.rows_of_square.items()}
+        q = info.squares
+        self.atlas = {sid: (float(x), float(y)) for sid, x, y in zip(q["square_id"], q["stage_x_um"], q["stage_y_um"])
+                      if x == x and y == y}
         self._remaining = np.ones(len(h), dtype=bool)
         self._view = self._remaining.view()
         self._view.flags.writeable = False
@@ -163,6 +203,12 @@ class ObservationState:
             return None
         return math.hypot(pa[0] - pb[0], pa[1] - pb[1])
 
+    def square_distance_mm(self, a: Optional[str], b: str) -> Optional[float]:
+        pa, pb = self.atlas.get(a) if a is not None else None, self.atlas.get(b)
+        if pa is None or pb is None:
+            return None
+        return math.hypot(pa[0] - pb[0], pa[1] - pb[1]) / 1000.0
+
     def apply(self, u: Update) -> Observation:
         for hid in u.spent:
             r = self.info.hole_row[hid]
@@ -173,6 +219,9 @@ class ObservationState:
         obs.time_s = float(u.time_s)
         obs.current_square = u.current_square
         obs.beam_hole = u.beam_hole
+        obs.anchor_hole = u.anchor_hole
+        obs.autofocus_hole = u.autofocus_hole
+        obs.stage_square = u.stage_square
         obs.new_results = tuple(Result(*r) for r in u.new_results)
         obs.pending = MappingProxyType(dict(u.pending))
         obs.remaining = self._view

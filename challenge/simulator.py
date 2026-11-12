@@ -6,6 +6,11 @@ the session's own clock says each action costs, and stops as soon as the microgr
 collected hold 75% of the curated particles the whole session yielded. Your score is the
 instrument time it took.
 
+Moves are charged as EPU spends them (challenge/clock.py): from where the stage is parked (the
+anchor), a hole within the clustering radius is an image-shift hop, a hole beyond it a stage
+event that becomes the new anchor; a square change includes centring on the new square's first
+hole, which becomes the anchor.
+
 The simulator holds the labels; your policy never sees them. It talks to the policy only
 through ``Update`` messages (challenge/policy.py), the same way on your machine and in
 grading.
@@ -38,6 +43,8 @@ class EpisodeResult:
     square_changes: int
     curve: list = field(default_factory=list)    # (hours, fraction of the target) after every hole
     compute_s: float = 0.0                       # the policy's own thinking time (wall clock)
+    stage_events: int = 0                        # moves beyond the clustering radius
+    seconds: dict = field(default_factory=dict)  # instrument seconds by kind: shot, hop, stage, stage_af, square
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -58,6 +65,10 @@ class Simulator:
         self.square_of = dict(zip(h["hole_id"], h["square_id"]))
         self.sort_key = dict(zip(h["hole_id"], h["sort_key"]))
         self.xy = {hid: (float(x), float(y)) for hid, x, y in zip(h["hole_id"], h["x_px"], h["y_px"])}
+        q = session.squares
+        self.atlas = {sid: (float(x), float(y)) for sid, x, y in zip(q["square_id"], q["stage_x_um"], q["stage_y_um"])
+                      if x == x and y == y}
+        self.events_log = None          # set to a list to record every action (grading's trace)
         self.holes_of = {s: [] for s in self.square_ids}
         for hid, s in zip(h["hole_id"], h["square_id"]):
             self.holes_of[s].append(hid)
@@ -80,6 +91,11 @@ class Simulator:
         self.left = {s: len(v) for s, v in self.holes_of.items()}
         self.current_square: Optional[str] = None
         self.last_hole: Optional[str] = None
+        self.anchor: Optional[str] = None          # where the last stage move landed
+        self.autofocus_at: Optional[str] = None    # where the last autofocus was
+        self.stage_square: Optional[str] = None    # the square the stage is in
+        self.stage_events = 0
+        self.seconds = {k: 0.0 for k in ("shot", "hop", "stage", "stage_af", "square")}
         self.time_s = 0.0
         self.square_changes = 0
         self.visits = 0
@@ -108,6 +124,24 @@ class Simulator:
             return None
         return math.hypot(pa[0] - pb[0], pa[1] - pb[1])
 
+    def square_distance_mm(self, a: Optional[str], b: str) -> Optional[float]:
+        """Grid distance between two squares in mm (None before the first square or unknown)."""
+        pa, pb = self.atlas.get(a) if a is not None else None, self.atlas.get(b)
+        if pa is None or pb is None:
+            return None
+        return math.hypot(pa[0] - pb[0], pa[1] - pb[1]) / 1000.0
+
+    def move_cost(self, hid: str, clock=None) -> tuple:
+        """(seconds, kind) of moving to a hole of the current square from where the stage is:
+        'entry' (the square's first hole: part of the square change), 'hop', 'stage', 'stage_af',
+        or 'none' (the beam is there)."""
+        clock = clock or self.clock
+        if self.last_hole is None:
+            return 0.0, "entry"
+        if hid == self.last_hole:
+            return 0.0, "none"
+        return clock.move(self.distance_px(self.anchor, hid), self.distance_px(self.autofocus_at, hid))
+
     # ----- transitions -------------------------------------------------------------
     def step(self, action) -> Update:
         if self.done:
@@ -121,10 +155,15 @@ class Simulator:
             if sq != self.current_square:
                 if self.current_square is not None:
                     self.square_changes += 1
-                self.time_s += self.clock.square_change_s
-                self.agent_clock.observe_square_change(self.clock.square_change_s)
+                d_mm = self.square_distance_mm(self.stage_square, sq)
+                change = self.clock.square_change_at(d_mm)
+                self.time_s += change
+                self.seconds["square"] += change
+                self.agent_clock.observe_square_change(change, d_mm)
+                self._log("square", sq, None, change, d_mm)
                 self.current_square = sq
-                self.last_hole = None
+                self.stage_square = sq
+                self.last_hole = self.anchor = self.autofocus_at = None
             self._square_streak += 1
             if self._square_streak > 4:
                 raise PolicyError("the policy keeps choosing squares without shooting a hole")
@@ -147,15 +186,26 @@ class Simulator:
         raise PolicyError(f"not an action: {action!r} (return GoToSquare or ShootHole)")
 
     def _shoot(self, hid: str) -> None:
-        if hid != self.last_hole:
-            dist = self.distance_px(self.last_hole, hid)
-            move = self.clock.move_s(dist)
+        move, kind = self.move_cost(hid)
+        if kind == "entry":
+            self.anchor = self.autofocus_at = hid
+        elif kind != "none":
+            d = self.distance_px(self.anchor, hid)
             self.time_s += move
-            self.agent_clock.observe_move(move, dist)
+            self.seconds[kind] += move
+            self.agent_clock.observe_move(move, kind, None if d is None else d * self.clock.um_per_px)
+            if kind in ("stage", "stage_af"):
+                self.anchor = hid
+                self.stage_events += 1
+            if kind == "stage_af":
+                self.autofocus_at = hid
         self.last_hole = hid
         self.visits += 1
+        before = self.collected
+        self._log("hole", self.square_of[hid], hid, move, kind)
         for row in self.queue[hid]:
             self.time_s += self.clock.shot_s
+            self.seconds["shot"] += self.clock.shot_s
             self.agent_clock.observe_shot(self.clock.shot_s)
             self.n_micrographs += 1
             self.collected += float(row[-2])
@@ -164,6 +214,8 @@ class Simulator:
             self.ledger.append((self.time_s + self.latency_s, result))
         self.queue[hid] = []
         self.left[self.square_of[hid]] -= 1
+        if self.events_log is not None:
+            self.events_log[-1].update(particles=self.collected - before, t_end_h=self.time_s / 3600.0)
         self._spent.append(hid)
         self.curve.append((self.time_s / 3600.0, min(self.collected / self.target, 1.0)))
 
@@ -177,11 +229,21 @@ class Simulator:
             pending[r[1]] = pending.get(r[1], 0) + 1
         c = self.agent_clock.model
         spent, self._spent = self._spent, []
+        here = self.current_square is not None
         return Update(time_s=self.time_s, current_square=self.current_square,
-                      beam_hole=self.last_hole if self.current_square is not None else None,
-                      spent=spent, new_results=new, pending=pending, clock=c.to_dict(), done=self.done)
+                      beam_hole=self.last_hole if here else None,
+                      spent=spent, new_results=new, pending=pending, clock=c.to_dict(), done=self.done,
+                      anchor_hole=self.anchor if here else None, autofocus_hole=self.autofocus_at if here else None,
+                      stage_square=self.stage_square)
+
+    def _log(self, what: str, square: str, hole: Optional[str], seconds: float, detail) -> None:
+        if self.events_log is not None:
+            self.events_log.append({"t_h": self.time_s / 3600.0, "action": what, "square": square, "hole": hole,
+                                    "move_s": seconds, "kind": detail if what == "hole" else "square",
+                                    "d_mm": detail if what == "square" else None, "particles": 0.0})
 
     def result(self) -> EpisodeResult:
         return EpisodeResult(session=self.session.name, hours=self.time_s / 3600.0,
                              completed=self.collected >= self.target, micrographs=self.n_micrographs,
-                             holes=self.visits, square_changes=self.square_changes, curve=list(self.curve))
+                             holes=self.visits, square_changes=self.square_changes, curve=list(self.curve),
+                             stage_events=self.stage_events, seconds=dict(self.seconds))

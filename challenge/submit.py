@@ -25,12 +25,17 @@ SHIPPED = {"README.md", "DATA.md", "START_HERE.ipynb", "main.py", "requirements.
            "challenge", "data", "figures", "submission.zip", ".ipynb_checkpoints", "__pycache__", ".DS_Store",
            ".git", ".config", "sample_data"}
 SKIP_PARTS = ("__pycache__", ".ipynb_checkpoints", ".DS_Store")
+# a Python environment is installed by grading from extra_requirements.txt, never packed
+ENV_DIRS = (".venv", "venv", "env", ".env", ".conda")
 
 
 def submission_files(root: Path) -> list:
     files = []
     for p in sorted(root.iterdir()):
         if p.name in SHIPPED or p.name.startswith("artifacts_"):
+            continue
+        if p.is_dir() and (p.name in ENV_DIRS or (p / "pyvenv.cfg").exists()):
+            print(f"  not packed: {p.name}/ is a Python environment (list packages in extra_requirements.txt)")
             continue
         items = [p] if p.is_file() else [q for q in p.rglob("*") if q.is_file()]
         files += [q for q in items if not any(s in q.parts for s in SKIP_PARTS)]
@@ -53,7 +58,7 @@ def check_and_pack(policy_file="my_policy.py", out_zip=None, *, train: bool = Tr
     smoke = min(sessions, key=lambda s: len(s.holes))
     print(f"checking: load(artifacts) and a full replay of {smoke.name} (in-sample, so its hours mean nothing)")
     t0 = time.perf_counter()
-    res = run_policy(module.load(artifacts), smoke, fit_clock(sessions), time_budget_s=COMPUTE_BUDGET_S)
+    res = run_policy(module.load(artifacts), smoke, fit_clock(sessions, smoke.presets), time_budget_s=COMPUTE_BUDGET_S)
     print(f"  ok: {res.hours:.2f} h, {res.micrographs} photos, load + play {time.perf_counter() - t0:.1f} s")
     per_hole = res.compute_s / max(res.holes, 1)
     if per_hole * 4000 > COMPUTE_BUDGET_S:

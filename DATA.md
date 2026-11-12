@@ -17,8 +17,9 @@ them, and `challenge.load_session("data/grid1")` returns one.
 
 ## Files in `data/<session>/`
 
-**`holes.parquet`**: one row per hole the operator selected, in the order they were
-first shot.
+**`holes.parquet`**: one row per hole the operator selected. On the training sessions the
+rows are in the order the holes were first shot; a hidden session's come in no particular
+order, with its ids re-issued (and so does the session `validate` plays).
 
 | column | meaning |
 |---|---|
@@ -33,7 +34,7 @@ first shot.
 | `intensity_z_square`, `intensity_rank_square` | brightness relative to the other holes of its square |
 | `nbr_log_intensity`, `nbr_intensity_contrast` | mean brightness of the six nearest holes, and the hole's contrast to them |
 | `near_grid_bar` | the hole sits next to a bar of the metal grid |
-| `order_norm` | the order in which the microscope's software would visit the holes of the square |
+| `order_norm` | the hole's place in the order EPU's hole finder numbered the holes of its square, which EPU's default path follows in part |
 | `geometry_known` | the square's geometry was available to that software |
 
 **`squares.parquet`**: one row per square.
@@ -43,7 +44,7 @@ first shot.
 | `square_id`, `n_holes` | identifier, and selected holes in it |
 | `n_targets`, `log_target_count` | all the holes the software found in the square |
 | `all_log_intensity_mean`, `near_grid_bar_fraction` | the square's mean hole brightness, and its share of holes near a grid bar |
-| `stage_x_um`, `stage_y_um` | where the square sits on the grid (µm) |
+| `stage_x_um`, `stage_y_um` | where the square sits on the grid (µm); square changes are priced by this distance |
 | `centroid_x_um`, `centroid_y_um` | the mean stage position of the square's holes (missing for codh) |
 | `overview_width_px`, `overview_height_px` | size of the full overview image |
 
@@ -72,10 +73,20 @@ one with `session.square_image(square_id)`.
 Contrast is set once per square, so brightness compares between the holes of a square.
 These overviews are all anyone sees of a hole before it is shot.
 
-**`session.json`**: specimen, optics, counts, and the session's own clock.
+**`session.json`**: specimen, optics, counts, and:
 
-On a hidden session your policy gets the same files except `micrographs.parquet` and the
-clock.
+* `epu`: the session's EPU settings, fixed before the first exposure: `clustering_mode` and
+  `clustering_radius_um` (holes within this distance of where the stage is parked are reached
+  by image shift), `autofocus_recurrence` and `autofocus_distance_um` (an autofocus after every
+  stage move, or once the stage is that far from the last one), and `square_pixel_nm` (the
+  pixel size of the square overview, so `x_px` × `square_pixel_nm` / 1000 is in µm). Also
+  `info.presets`.
+* `clock`: the session's own clock (below).
+* `square_changes`: the session's recorded square changes in seconds, and how far apart the
+  squares were (mm), which `fit_clock` pools.
+
+On a hidden session your policy gets the same files except `micrographs.parquet`, the clock
+and the recorded square changes. It does get `epu`.
 
 ## The simulator
 
@@ -83,17 +94,29 @@ clock.
   `obs.current_square` is None: at the start, and after a square runs out of selected
   holes. `ShootHole(hole_id)` takes every photo of a hole in the current square, and the
   hole is then spent.
-* **Timings.** Each session's clock is fitted from its own recorded time stamps:
+* **Timings.** Moves cost what EPU spends. EPU parks the stage at a hole, the **anchor**,
+  and reaches every hole within the clustering radius of it by image shift. A hole beyond
+  the radius needs a **stage move**: the stage travels, settles and re-centres, and
+  autofocuses when the session's autofocus rule says one is due; that hole becomes the new
+  anchor. A square change includes centring on the new square's first hole, which becomes
+  the anchor. Each session's clock is the mean of its own recorded transitions of each kind,
+  operator breaks left out:
 
-  | action | duration |
-  |---|---|
-  | one photo | 3 to 13 s |
-  | move to a near hole | 0 to 9 s |
-  | move to a far hole, where the session shows a difference | 37 to 45 s |
-  | square change | 80 to 180 s |
+  | action | grid1 | codh | delta10 | deltaRlmE |
+  |---|---|---|---|---|
+  | one photo | 3.9 s | 3.4 s | 11.7 s | 4.1 s |
+  | hop: a hole within the radius of the anchor | 0.1 s | 0.1 s | 9.8 s (a short stage hop) | 0.9 s |
+  | stage move: any other hole | 53 s | 76 s | 55 s | 45 s |
+  | autofocus on top, when due | after every stage move | after every stage move | +20 s, once 10 µm from the last | +7.5 s, once 20 µm from the last |
+  | square change | 116 s | 120 s, +31 s per mm farther | 174 s | 99 s |
+  | clustering radius | 12 µm | 6 µm | 6 µm | 8 µm |
 
-  The simulator charges the session's own clock. Your policy sees `obs.clock`, an
-  estimate that starts from the training sessions' clock and learns from the day's moves.
+  A stage move also grows slightly with its distance from the anchor on codh, delta10 and
+  deltaRlmE (0.1 to 0.7 s per µm). Priced this way, the operator's own recorded order takes
+  what the session really took, breaks apart, to within 0-4%. `challenge/clock.py` has the
+  details. The simulator charges the session's own clock. Your policy sees `obs.clock`, an
+  estimate that starts from the training sessions' clock under the session's own EPU
+  settings and learns from the day's moves.
 * **Reports.** Each photo's report arrives 75 instrument-seconds after it is taken, in
   `obs.new_results`. `obs.pending` counts the photos still waiting for theirs.
 * **Stop.** The session ends as soon as the photos taken hold 75% of the particles the
@@ -103,8 +126,12 @@ clock.
 
 * `obs.holes_left()` and `obs.squares_left()`
 * `obs.remaining`, a boolean array aligned with `info.holes`
+* `obs.anchor_hole`, where the stage is parked, and `obs.autofocus_hole`
+* `obs.move_s(hole_id)` and `obs.move_kind(hole_id)` ('hop', 'stage', 'stage_af', or 'entry'
+  for a square's first hole), priced from the anchor by your clock estimate
 * `obs.cost_s(hole_id)`, the seconds to shoot a hole from where you are
-* `obs.distance_px(a, b)`
+* `obs.square_change_s(square_id)`, the seconds to move there from the square the stage is in
+* `obs.distance_px(a, b)` and `obs.distance_um(a, b)`
 
 `challenge/policy.py` documents all of it.
 
@@ -113,10 +140,18 @@ clock.
 | reference | what it does |
 |---|---|
 | random | picks a random square, then random holes in it |
-| raster | always takes the nearest hole not yet shot, then the nearest square; blind to quality |
+| raster | always takes the nearest hole not yet shot, then the nearest square; blind to quality and to where the stage is parked |
+| EPU raster | what EPU does on its own: the raster's squares, and in each square EPU's clusters (park at the hole whose radius covers the most holes left, shoot them all, repeat); blind to quality |
 | operator | the session's own recorded order, replayed |
-| oracle | knows every hole's outcome in advance and walks a short path through the best ones |
+| oracle | knows every hole's outcome in advance and visits the best ones cluster by cluster |
 
-The oracle is a strong reference, not a proven optimum. Random and the raster depend on
-a random start and are averaged over two seeds. Grading also shows two frontier language
-models that played the same sessions through an interactive version of the simulator.
+The oracle is a strong reference, not a proven optimum. Random and the two rasters depend
+on a random first square and are averaged over ten. Grading also shows two frontier
+language models that played the same sessions through an interactive version of the
+simulator, re-priced on this clock.
+
+**Grading.** Grading plays each hidden session as a real day would present it: the rows of
+every table in no particular order and every id re-issued. Positions, images, EPU's
+settings and `order_norm` are as described above. `validate` plays the held-out training
+session the same way (`Session.as_day()`), and the references above are scored on that
+view.

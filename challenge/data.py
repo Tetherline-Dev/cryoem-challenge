@@ -1,7 +1,7 @@
 """The data: one folder per recorded session.
 
     data/<session>/
-      session.json        name, specimen, optics, counts, the session's own instrument clock
+      session.json        name, specimen, optics, counts, EPU settings, the session's own clock
       squares.parquet     one row per grid square (positions on the grid, hole-finder summaries)
       holes.parquet       one row per hole the operator selected (position, size, hole-finder features)
       micrographs.parquet one row per exposure: CryoSPARC Live outputs and the two labels
@@ -10,11 +10,12 @@
       square_images.parquet  the square overviews taken before choosing holes (JPEG bytes per square)
 
 See README.md ("The data") for every column. On a hidden session your policy receives the
-same folder without micrographs.parquet and without the clock.
+same folder without micrographs.parquet, the clock and the recorded square changes.
 """
 from __future__ import annotations
 
 import json
+import zlib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Optional
@@ -22,7 +23,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from .clock import Clock
+from .clock import Clock, EpuPresets
 
 PACKAGE = Path(__file__).resolve().parent.parent
 DATA_DIR = PACKAGE / "data"
@@ -85,14 +86,17 @@ class Session:
             return None
         return imgs[row]
 
-    def square_image(self, square_id: str) -> Optional[np.ndarray]:
-        """The square overview, long side 1024 px (uint8). Hole pixel coordinates x_px/y_px
-        are in the full-size frame overview_width_px x overview_height_px."""
+    def _square_jpegs(self) -> dict:
         if self._square_jpeg is None:
             f = None if self.path is None else self.path / "square_images.parquet"
             t = pd.read_parquet(f) if f is not None and f.exists() else None
             self._square_jpeg = {} if t is None else dict(zip(t["square_id"].astype(str), t["jpeg"]))
-        data = self._square_jpeg.get(str(square_id))
+        return self._square_jpeg
+
+    def square_image(self, square_id: str) -> Optional[np.ndarray]:
+        """The square overview, long side 1024 px (uint8). Hole pixel coordinates x_px/y_px
+        are in the full-size frame overview_width_px x overview_height_px."""
+        data = self._square_jpegs().get(str(square_id))
         if data is None:
             return None
         import io
@@ -102,10 +106,54 @@ class Session:
         with Image.open(io.BytesIO(data)) as im:
             return np.asarray(im.convert("L"))
 
+    @property
+    def presets(self) -> EpuPresets:
+        """The session's EPU settings (clustering radius, autofocus rule, square image pixel
+        size): known before the first exposure, on hidden sessions too."""
+        return EpuPresets.from_dict(self.meta.get("epu") or {})
+
     def public(self, name: Optional[str] = None) -> "Session":
         """What a policy sees at reset: no micrographs, no clock."""
-        meta = {k: v for k, v in self.meta.items() if k in ("specimen", "pixel_size_A", "dose_e_per_A2", "kv")}
+        meta = {k: v for k, v in self.meta.items() if k in ("specimen", "pixel_size_A", "dose_e_per_A2", "kv", "epu")}
         return replace(self, name=name or self.name, micrographs=None, clock=None, meta=meta)
+
+    def as_day(self, seed: Optional[int] = None) -> "Session":
+        """The session as a real day presents it, the way grading presents a hidden session:
+        every table's rows in no particular order and every hole, square and micrograph id
+        re-issued. Positions, images, features, labels and the clock are unchanged. The
+        recorded tables list holes in the operator's order; this view does not.
+        ``seed`` defaults to one fixed per session name, so runs compare."""
+        return self.day_view(seed)[0]
+
+    def day_view(self, seed: Optional[int] = None) -> tuple:
+        """``as_day`` with the id maps: (session, {recorded hole id: day's}, {recorded square id: day's})."""
+        rng = np.random.default_rng(day_seed(self.name) if seed is None else seed)
+        holes, squares = self.holes.copy(), self.squares.copy()
+
+        def fresh(n: int) -> list:
+            return [str(v) for v in rng.choice(np.arange(10_000_000, 100_000_000), size=n, replace=False)]
+
+        hmap = dict(zip(holes["hole_id"], fresh(len(holes))))
+        smap = dict(zip(squares["square_id"], fresh(len(squares))))
+        hperm = rng.permutation(len(holes))
+        qperm = rng.permutation(len(squares))
+        h = holes.iloc[hperm].reset_index(drop=True)
+        h["hole_id"] = h["hole_id"].map(hmap)
+        h["square_id"] = h["square_id"].map(smap)
+        h["sort_key"] = h["square_id"] + ":hole:" + h["hole_id"]
+        q = squares.iloc[qperm].reset_index(drop=True)
+        q["square_id"] = q["square_id"].map(smap)
+        m = None
+        if self.micrographs is not None:
+            m = self.micrographs.iloc[rng.permutation(len(self.micrographs))].reset_index(drop=True)
+            m["hole_id"] = m["hole_id"].map(hmap)
+            m["square_id"] = m["square_id"].map(smap)
+            m["micrograph_id"] = m["hole_id"] + "-" + m["shot_index"].astype(str)
+        images = self.hole_images
+        day = replace(self, squares=q, holes=h, embeddings=self.embeddings[hperm], micrographs=m, path=None,
+                      _hole_images=None if images is None else images[hperm],
+                      _square_jpeg={smap[s]: v for s, v in self._square_jpegs().items() if s in smap})
+        return day, hmap, smap
 
     def hole_yield(self) -> pd.Series:
         """Mean curated particles per micrograph of every hole (training sessions)."""
@@ -132,6 +180,11 @@ def load_session(path, *, labels: bool = True) -> Session:
         clock = Clock.from_dict(meta["clock"])
     return Session(name=meta["name"], specimen=meta.get("specimen", ""), squares=squares, holes=holes,
                    embeddings=emb, path=path, micrographs=micrographs, clock=clock, meta=meta)
+
+
+def day_seed(name: str) -> int:
+    """The fixed seed of a session's real-day view (``Session.as_day``)."""
+    return zlib.crc32(name.encode())
 
 
 def session_names(data_dir=DATA_DIR) -> list:

@@ -48,7 +48,7 @@ def cmd_references(a) -> None:
     sessions = training_sessions()
     out = {}
     for s in sessions:
-        out[s.name] = reference_hours(s, fit_clock([o for o in sessions if o.name != s.name]))
+        out[s.name] = reference_hours(s.as_day(), fit_clock([o for o in sessions if o.name != s.name], s.presets))
         print(f"  {s.name:10s} " + "  ".join(f"{k} {v:.2f} h" for k, v in out[s.name].items()), flush=True)
     REFERENCES_FILE.write_text(json.dumps(out, indent=1))
     print(f"wrote {REFERENCES_FILE}")

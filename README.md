@@ -28,8 +28,11 @@ you which. Software reports on each photo about 75 seconds after it is taken. We
 later an expert decides which particles are good enough to keep, and that count is what
 the session was for.
 
-The microscope's time is expensive. It goes into photos, moves between holes (cheap
-when near, slower when far) and moves between squares (minutes).
+The microscope's time is expensive. It goes into photos, moves between holes and moves
+between squares. The microscope's software (EPU) parks the stage at a hole and reaches the
+holes within a few micrometres of it by image shift, in about a second. Any other hole needs
+a stage move of 45 to 75 seconds, sometimes with an autofocus. A square change takes about
+two minutes. `DATA.md` has each session's timings.
 
 **Your task:** write a policy that decides, step by step, which square and which hole
 come next. The aim is to collect 75% of the particles the expert kept, in as few
@@ -65,7 +68,7 @@ the first cell of the notebook, or `python main.py download`, fetches them.
 3. Next time, open `cryoem-challenge/START_HERE.ipynb` from your Drive with Google
    Colaboratory: double-click it, or right-click → Open with. Install Colaboratory in your
    Drive apps if you don't have it already.
-4. After running the first cell, if the figures do not appear in the collab, refresh the page before continuing.
+4. After running the first cell, if the figures do not appear in Colab, refresh the page before continuing.
 
 **Locally:**
 
@@ -93,15 +96,22 @@ sessions:
 
 | policy | instrument hours, four sessions | vs operator | gap closed |
 |---|---|---|---|
-| oracle: knows every outcome | 37.20 h | −29.6% | 100% |
-| raster: nearest hole next, blind to quality | 47.84 h | −9.5% | 32% |
-| `bayes_policy.py`: a Bayesian model | 52.48 h | −0.7% | 2% |
-| operator: the order the session was recorded in | 52.87 h | 0.0% | 0% |
-| `my_policy.py` as you get it: a small neural network | 55.19 h | +4.4% | −15% |
-| random: random squares, random holes | 64.06 h | +21.2% | −71% |
+| oracle: knows every outcome | 45.03 h | −19.6% | 100% |
+| operator: the order the session was recorded in | 56.02 h | 0.0% | 0% |
+| EPU raster: what EPU does on its own, cluster by cluster, blind to quality | 56.46 h | +0.8% | −4% |
+| `bayes_policy.py`: a Bayesian model | 61.06 h | +9.0% | −46% |
+| raster: nearest hole next, blind to quality and to where the stage is | 64.96 h | +16.0% | −81% |
+| `my_policy.py` as you get it: a small neural network | 68.01 h | +21.4% | −109% |
+| random: random squares, random holes | 119.32 h | +113.0% | −576% |
 
 On only two sessions, a percent or two is noise. The score starts the conversation; it
-does not settle it.
+does not settle it. (The hours above come from a fresh install of `requirements.txt`; other
+library versions can move the policies' hours by a little.)
+
+Grading presents each hidden session as a real day would: the rows of every table in no
+particular order and every id re-issued. `validate` presents the session it plays the same
+way; the training sessions keep their recorded order. Positions, images and EPU's settings
+are as on your four sessions.
 
 ## Handing in
 

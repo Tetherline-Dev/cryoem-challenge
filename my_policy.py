@@ -175,7 +175,8 @@ def decide(obs, grid, mean, sd):
     photos_left = np.zeros(len(grid.square_ids))
     np.add.at(photos_left, grid.sq, np.where(left, grid.n, 0.0))
     stay = np.clip(np.minimum(STAY, photos_left), 1.0, None)
-    seconds_after_move = (clock.near_move_s + grid.n * clock.shot_s) / grid.n + clock.square_change_s / stay[grid.sq]
+    change = np.array([obs.square_change_s(sid) for sid in grid.square_ids])
+    seconds_after_move = (clock.mean_move_s + grid.n * clock.shot_s) / grid.n + change[grid.sq] / stay[grid.sq]
     square_rate = np.full(len(grid.square_ids), -np.inf)
     np.maximum.at(square_rate, grid.sq, np.where(left, value / seconds_after_move, -np.inf))
     if obs.current_square is None:
@@ -183,12 +184,9 @@ def decide(obs, grid, mean, sd):
     here = grid.square_ids.index(obs.current_square)
     just_arrived = obs.beam_hole is None          # a square change was just paid for: shoot here first
     rows = np.flatnonzero((grid.sq == here) & left)
-    # This square: seconds per photo of each hole, counting the move from where the beam is.
-    move = np.full(len(rows), clock.near_move_s)
-    if obs.beam_hole is not None and clock.far_move_s is not None:
-        b = grid.row[obs.beam_hole]
-        d = np.hypot(grid.x[rows] - grid.x[b], grid.y[rows] - grid.y[b])
-        move = np.where(d >= clock.far_threshold_px, clock.far_move_s, clock.near_move_s)
+    # This square: seconds per photo of each hole, counting the move from where the stage is
+    # (a hop within the clustering radius of the anchor, else a stage move).
+    move = np.array([obs.move_s(grid.hole_ids[r]) for r in rows])
     rates = value[rows] / ((move + grid.n[rows] * clock.shot_s) / grid.n[rows])
     best = int(np.argmax(rates))
     square_rate[here] = -np.inf
